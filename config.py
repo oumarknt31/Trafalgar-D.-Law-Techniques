@@ -80,6 +80,12 @@ ANIM_K_ROOM      = 3.0
 # Duration the technique name overlay remains visible after activation (seconds)
 NAME_CARD_DURATION = 2.0
 
+# ── MediaPipe ──────────────────────────────────────────────────────────────────
+MEDIAPIPE_MODEL_PATH            = "assets/models/hand_landmarker.task"
+MEDIAPIPE_DETECTION_CONFIDENCE  = 0.7
+MEDIAPIPE_PRESENCE_CONFIDENCE   = 0.5
+MEDIAPIPE_TRACKING_CONFIDENCE   = 0.6
+
 # ── Gesture Landmark Thresholds ────────────────────────────────────────────────
 # All values are in MediaPipe's normalized [0, 1] coordinate space unless noted.
 
@@ -96,11 +102,25 @@ V_SIGN_MIN_SPREAD_DEGREES = 20.0
 # Maximum normalized horizontal spread across the four blade fingers for Amputate
 AMPUTATE_MAX_FINGER_SPREAD = 0.05
 
-# Minimum wrist displacement (normalized) in one frame to count as a swipe (Shambles)
+# Minimum wrist displacement (normalized) in one frame to count as a swipe
 SWIPE_VELOCITY_THRESHOLD = 0.05
 
 # Mes: hand y-coordinate (normalized) must be greater than this to count as "chest"
 CHEST_REGION_Y_MIN = 0.50
+
+# AMPUTATE: max degrees the hand axis may deviate from horizontal
+AMPUTATE_MAX_ANGLE_DEG = 45.0
+
+# TAKT: (wrist_y_px - tip_y_px) / frame_height must exceed this value for "upward"
+# (in pixel space y increases downward, so wrist_y > tip_y when pointing up)
+TAKT_MIN_UPWARD_RATIO = 0.12
+
+# SHAMBLES: seconds from arming (two-finger hold satisfied) until flick window closes
+SHAMBLES_FLICK_WINDOW = 1.5
+
+# Seconds to suppress FIST emission after GAMMA_KNIFE fires (prevents accidental
+# ROOM collapse when the user curls their fingers to release the technique)
+GAMMA_KNIFE_FIST_SUPPRESS = 0.5
 
 # ── Particles ──────────────────────────────────────────────────────────────────
 PARTICLE_MIN_SPEED = 1.5    # pixels per frame
