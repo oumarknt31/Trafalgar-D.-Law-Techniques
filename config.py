@@ -48,7 +48,7 @@ ROOM_CHARGE_HOLD         = 0.5
 
 # ── Gesture Timing (seconds) ───────────────────────────────────────────────────
 # Maximum window in which a multi-step gesture sequence must be completed
-SEQUENCE_WINDOW             = 2.0
+SEQUENCE_WINDOW             = 4.0   # was 2.0 — extended to give more time between K-ROOM steps
 
 # Per-gesture hold durations before the gesture is considered "fired"
 GESTURE_HOLD_SHAMBLES_STEP1 = 0.3   # hold two-finger point before wrist flick
@@ -97,30 +97,42 @@ FINGER_EXTENSION_Y_MARGIN = 0.0
 FIST_MAX_FINGERS_EXTENDED = 0
 
 # Minimum angle (degrees) between index and middle finger vectors for Takt V-sign
-V_SIGN_MIN_SPREAD_DEGREES = 20.0
+V_SIGN_MIN_SPREAD_DEGREES = 15.0   # was 20.0 — loosened for reliability
 
 # Maximum normalized horizontal spread across the four blade fingers for Amputate
 AMPUTATE_MAX_FINGER_SPREAD = 0.05
 
 # Minimum wrist displacement (normalized) in one frame to count as a swipe
-SWIPE_VELOCITY_THRESHOLD = 0.05
+SWIPE_VELOCITY_THRESHOLD = 0.03   # was 0.05 — lowered for Shambles reliability
 
 # Mes: hand y-coordinate (normalized) must be greater than this to count as "chest"
-CHEST_REGION_Y_MIN = 0.50
+CHEST_REGION_Y_MIN = 0.40   # was 0.50 — lowered so mid-torso height counts
 
 # AMPUTATE: max degrees the hand axis may deviate from horizontal
 AMPUTATE_MAX_ANGLE_DEG = 45.0
 
 # TAKT: (wrist_y_px - tip_y_px) / frame_height must exceed this value for "upward"
 # (in pixel space y increases downward, so wrist_y > tip_y when pointing up)
-TAKT_MIN_UPWARD_RATIO = 0.12
+TAKT_MIN_UPWARD_RATIO = 0.08   # was 0.12 — lowered for reliability
+
+# TAKT: number of consecutive frames shape+orientation must be stable before
+# the hold timer is considered "started" (reduces false-positive jitter)
+TAKT_CONSECUTIVE_FRAMES = 3
 
 # SHAMBLES: seconds from arming (two-finger hold satisfied) until flick window closes
-SHAMBLES_FLICK_WINDOW = 1.5
+SHAMBLES_FLICK_WINDOW = 2.5   # was 1.5 — extended for Shambles reliability
 
 # Seconds to suppress FIST emission after GAMMA_KNIFE fires (prevents accidental
 # ROOM collapse when the user curls their fingers to release the technique)
 GAMMA_KNIFE_FIST_SUPPRESS = 0.5
+
+# Minimum normalized distance between thumb tip (lm4) and thumb MCP (lm2) for
+# the thumb to count as "extended / abducted" in open-palm detection
+THUMB_ABDUCTION_MIN_DIST = 0.04
+
+# Consecutive no-hand frames before arm/hold state is reset (grace period for
+# brief MediaPipe tracking drops that should not interrupt an in-progress gesture)
+HAND_LOSS_GRACE_FRAMES = 4
 
 # ── Particles ──────────────────────────────────────────────────────────────────
 PARTICLE_MIN_SPEED = 1.5    # pixels per frame

@@ -44,7 +44,7 @@ import cv2
 import numpy as np
 
 import config
-from gestures.classifier import ClassificationResult, GestureClassifier, GestureType
+from gestures.classifier import ClassificationResult, GestureClassifier, GestureType  # noqa: F401
 from gestures.hand_tracker import HandTracker
 from gestures.sequence_buffer import SequenceBuffer
 
@@ -73,7 +73,8 @@ GESTURE_LABELS: dict[str, str] = {
     "mes":             "MES  メス",
     "takt":            "TAKT  タクト",
     "shambles":        "SHAMBLES  シャンブルズ",
-    "horns":           "HORNS (K-ROOM step)",
+    "horns":           "HORNS (K-ROOM step 2)",
+    "fist_held":       "FIST HELD (K-ROOM step 0)",
     "k_room_complete": "★ K-ROOM AWAKENING ★",
     "hand_lost":       "HAND LOST",
     "none":            "",
@@ -124,23 +125,58 @@ def draw_finger_state(
         )
 
 
-def draw_wrist_speed(
-    frame: np.ndarray,
-    speed: float,
-    w:     int,
-    debug: bool,
+def draw_wrist_velocity(
+    frame:  np.ndarray,
+    result: "ClassificationResult",
+    w:      int,
+    debug:  bool,
 ) -> None:
-    """Draw wrist speed in the top-right corner."""
+    """
+    Draw wrist velocity readout in the top-right corner.
+    Shows speed magnitude + vx/vy components.
+    Components turn bright cyan when above SWIPE_VELOCITY_THRESHOLD (Shambles tuning).
+    """
     if not debug:
         return
-    text  = f"spd {speed:.3f}"
-    scale = 0.42
-    (tw, _), _ = cv2.getTextSize(text, FONT_SMALL, scale, 1)
-    cv2.putText(
-        frame, text,
-        (w - tw - 10, 30),
-        FONT_SMALL, scale, TEAL_MID, 1, cv2.LINE_AA,
-    )
+
+    threshold = config.SWIPE_VELOCITY_THRESHOLD
+    vx_color  = TEAL_BRIGHT if abs(result.wrist_vx) > threshold else TEAL_MID
+    vy_color  = TEAL_BRIGHT if abs(result.wrist_vy) > threshold else TEAL_MID
+    spd_color = TEAL_BRIGHT if result.wrist_speed > threshold else TEAL_MID
+
+    lines = [
+        (f"spd {result.wrist_speed:.3f}", spd_color),
+        (f"vx  {result.wrist_vx:+.3f}",  vx_color),
+        (f"vy  {result.wrist_vy:+.3f}",  vy_color),
+    ]
+    scale = 0.40
+    for i, (text, color) in enumerate(lines):
+        (tw, _), _ = cv2.getTextSize(text, FONT_SMALL, scale, 1)
+        cv2.putText(
+            frame, text,
+            (w - tw - 10, 26 + i * 18),
+            FONT_SMALL, scale, color, 1, cv2.LINE_AA,
+        )
+
+
+def draw_hand_y_norm(
+    frame:      np.ndarray,
+    result:     "ClassificationResult",
+    debug:      bool,
+) -> None:
+    """
+    Draw the wrist y-norm value when a fist is detected (Mes tuning).
+    Turns bright cyan when y_norm exceeds CHEST_REGION_Y_MIN.
+    """
+    if not debug or not result.hand_detected:
+        return
+    if result.shape != "fist":
+        return
+    y    = result.hand_y_norm
+    over = y > config.CHEST_REGION_Y_MIN
+    col  = TEAL_BRIGHT if over else TEAL_MID
+    text = f"y_norm {y:.3f}  {'[CHEST]' if over else '[above chest]'}"
+    cv2.putText(frame, text, (12, 80), FONT_SMALL, 0.44, col, 1, cv2.LINE_AA)
 
 
 def draw_shape_label(
@@ -326,8 +362,9 @@ def main() -> None:
 
         if debug_overlay:
             draw_finger_state(frame, result.fingers, debug=True)
-            draw_wrist_speed(frame, result.wrist_speed, w, debug=True)
+            draw_wrist_velocity(frame, result, w, debug=True)
             draw_shape_label(frame, result.shape, debug=True)
+            draw_hand_y_norm(frame, result, debug=True)
             draw_k_room_progress(frame, seq_buf.k_room_step, w, debug=True)
 
         draw_hold_bar(frame, result.hold_progress, h, w)

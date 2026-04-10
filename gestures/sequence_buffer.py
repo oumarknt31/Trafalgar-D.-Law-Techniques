@@ -48,8 +48,11 @@ from gestures.classifier import GestureType
 
 
 # The ordered GestureType steps that form the K-ROOM sequence.
+# Step 0: FIST_HELD  — non-chest fist held 0.4 s (does NOT collapse ROOM)
+# Step 1: OPEN_PALM  — all five fingers extended (no-op in ROOM_ACTIVE state)
+# Step 2: HORNS      — index + pinky held 0.4 s
 _K_ROOM_STEPS: List[GestureType] = [
-    GestureType.HORNS,
+    GestureType.FIST_HELD,
     GestureType.OPEN_PALM,
     GestureType.HORNS,
 ]
