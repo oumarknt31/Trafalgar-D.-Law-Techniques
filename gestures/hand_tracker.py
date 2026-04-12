@@ -255,19 +255,35 @@ class HandTracker:
         pips   = [3, 6, 10, 14, 18]
         margin = config.FINGER_EXTENSION_Y_MARGIN
 
-        # Thumb: compare tip (lm4) against MCP joint (lm2) for lateral abduction.
-        # Using lm2 (MCP) instead of lm3 (IP) gives a more stable reference —
-        # lm3 is too close to the tip and causes false negatives on open palms.
-        # Additionally require a minimum distance to reject nearly-coincident cases.
-        import math as _math
-        dx = landmarks[4].x - landmarks[2].x
-        dy = landmarks[4].y - landmarks[2].y
-        abduction_dist = _math.hypot(dx, dy)
+        # ── Thumb extension ────────────────────────────────────────────────────
+        # Debug: print key x values every frame so we can verify in live use.
+        print(
+            f"[THUMB] lm1.x={landmarks[1].x:.3f}  lm2.x={landmarks[2].x:.3f}"
+            f"  lm3.x={landmarks[3].x:.3f}  lm4.x={landmarks[4].x:.3f}"
+            f"  hand={handedness}",
+            flush=True,
+        )
+
+        # Check 1 — lateral x-axis abduction: tip (lm4) vs MCP base (lm2).
+        # lm2 is more stable than lm3 (IP) because it's further from the tip.
         if handedness == "Right":
-            laterally_ok = landmarks[4].x < landmarks[2].x
+            x_abducted = landmarks[4].x < landmarks[2].x
         else:
-            laterally_ok = landmarks[4].x > landmarks[2].x
-        thumb_ext = laterally_ok and abduction_dist > config.THUMB_ABDUCTION_MIN_DIST
+            x_abducted = landmarks[4].x > landmarks[2].x
+
+        # Check 2 — spread distance: tip (lm4) vs middle-finger base (lm9).
+        # When the thumb is genuinely abducted it is far from the centre of the
+        # palm regardless of hand rotation — this catches cases where the x-axis
+        # comparison alone fails due to hand tilt.
+        import math as _math
+        tip_to_palm_dist = _math.hypot(
+            landmarks[4].x - landmarks[9].x,
+            landmarks[4].y - landmarks[9].y,
+        )
+        dist_abducted = tip_to_palm_dist > config.THUMB_ABDUCTION_MIN_DIST
+
+        # Either check passing is sufficient.
+        thumb_ext = x_abducted or dist_abducted
 
         result = [thumb_ext]
         for tip_i, pip_i in zip(tips[1:], pips[1:]):
