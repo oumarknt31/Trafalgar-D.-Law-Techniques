@@ -229,8 +229,18 @@ class GestureClassifier:
 
         # open_palm MUST be checked before knife_hand — thumb fix in hand_tracker
         # ensures this only fires when the thumb is genuinely abducted.
+        # Spread guard: mean x-distance between adjacent fingertips must exceed
+        # MIN_PALM_FINGER_SPREAD, rejecting fists where all fingers accidentally
+        # register as "extended" but remain physically bunched together.
         if T and I and M and R and P:
-            return "open_palm"
+            lm = hand.landmarks_norm
+            mean_spread = (
+                abs(lm[8].x - lm[12].x) +
+                abs(lm[12].x - lm[16].x) +
+                abs(lm[16].x - lm[20].x)
+            ) / 3.0
+            if mean_spread >= config.MIN_PALM_FINGER_SPREAD:
+                return "open_palm"
 
         if not I and not M and not R and not P:
             return "fist"
@@ -280,8 +290,15 @@ class GestureClassifier:
             return GestureType.GAMMA_KNIFE
 
         # ── 2. OPEN_PALM ─────────────────────────────────────────────────────────
+        # Hold-then-fire: user must keep the palm open for ROOM_CHARGE_HOLD
+        # seconds before the event fires.  This gives hold_progress a meaningful
+        # value to display and prevents accidental one-frame triggers.
         if shape == "open_palm":
-            return self._leading_edge(GestureType.OPEN_PALM)
+            self._last_continuous = None   # clear FIST debounce if transitioning
+            if not self._hold_fired and hold_elapsed >= config.ROOM_CHARGE_HOLD:
+                self._hold_fired = True
+                return GestureType.OPEN_PALM
+            return None
 
         # Clear continuous debounce when leaving continuous gestures.
         self._last_continuous = None
@@ -457,6 +474,9 @@ class GestureClassifier:
 
     def _hold_progress(self, shape: str, hold_elapsed: float) -> float:
         """0.0–1.0 progress toward current shape's hold requirement."""
+        if shape == "open_palm":
+            required = config.ROOM_CHARGE_HOLD
+            return 0.0 if required <= 0.0 else min(1.0, hold_elapsed / required)
         shape_to_gesture = {
             "two_finger_v":  "takt",
             "two_finger_pt": "shambles",

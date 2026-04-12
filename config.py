@@ -130,6 +130,11 @@ GAMMA_KNIFE_FIST_SUPPRESS = 0.5
 # the thumb to count as "extended / abducted" in open-palm detection
 THUMB_ABDUCTION_MIN_DIST = 0.04
 
+# Minimum mean x-distance between adjacent fingertips (lm8, lm12, lm16, lm20)
+# for open_palm to be accepted.  Rejects fists where all fingers register as
+# "extended" but remain physically bunched together.
+MIN_PALM_FINGER_SPREAD = 0.04
+
 # Consecutive no-hand frames before arm/hold state is reset (grace period for
 # brief MediaPipe tracking drops that should not interrupt an in-progress gesture)
 HAND_LOSS_GRACE_FRAMES = 4

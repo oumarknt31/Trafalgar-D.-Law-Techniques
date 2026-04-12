@@ -350,10 +350,15 @@ def main() -> None:
         # ── HUD ────────────────────────────────────────────────────────────────
         draw_banner(frame, h, w)
 
-        # Main label: show last fired gesture for LABEL_PERSIST_S, then shape
+        # Main label: show last fired gesture for LABEL_PERSIST_S, then shape.
+        # Special case: while open_palm is held, show "ROOM XX%" charge progress.
         if last_fired_gesture and (now - last_fired_time) < LABEL_PERSIST_S:
             label = GESTURE_LABELS.get(last_fired_gesture, last_fired_gesture.upper())
             label_color = WHITE if last_fired_gesture == "k_room_complete" else TEAL_BRIGHT
+        elif result.hand_detected and result.shape == "open_palm":
+            pct = int(result.hold_progress * 100)
+            label = f"ROOM {pct}%"
+            label_color = TEAL_BRIGHT if result.hold_progress >= 1.0 else TEAL_MID
         else:
             label = result.shape if result.hand_detected else "— no hand —"
             label_color = TEAL_MID
